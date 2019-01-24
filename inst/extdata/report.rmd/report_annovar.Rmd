@@ -1,0 +1,211 @@
+## Variants
+
+Total `r report.summary$annot$total.variant`(`r report.summary$annot$min.variant`-`r report.summary$annot$max.variant`, average: `r report.summary$annot$mean.variant`) variants were identified. The identified variants were classified according to their genomic coordinates in relation to the known genes. 
+
+Output summary is saved at `r paste0(output.dir,"/06_annot")`.
+\       
+```{r Func}
+if(length(report.summary$annot)!=0) {
+  
+  func=report.summary$annot$Func
+  func=data.frame(Func.Name=rownames(func), func, row.names = NULL)
+  table.func=func
+  table.func[,-1]=format(table.func[,-1], big.mark=",")
+
+  specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+  func[,-1]=apply(func[,-1], 2, as.numeric)
+  stack.func=func
+
+  t.func=t(func)
+  t.func.name=t.func[1,]
+  t.func=t.func[-1,]
+  colnames(t.func)=t.func.name
+  trans.df=data.frame(Sample.Name=rownames(t.func), t.func, row.names = NULL)
+  table.func.df=trans.df
+  
+} 
+```
+
+### Gene Function Plot
+
+\       
+\       
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=8}
+func.df=melt(trans.df, id.vars = "Sample.Name")
+
+func.df$value=as.numeric(as.character(func.df$value))
+func.df$Sample.Name=factor(as.character(func.df$Sample.Name), levels = unique(func.df$Sample.Name))
+
+if(length(unique(func.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(func.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+
+func.plot=ggplot(func.df, aes(x=Sample.Name, y =value, fill=variable)) + geom_bar(stat = 'identity', position = 'stack',width=0.5) + coord_flip + opts +
+          theme(legend.position="bottom", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold")) + labs(fill = "") +
+          xlab("Sample Name") + ylab("count") +ggtitle("Scale of Variant Function") +
+  theme(plot.title = element_text(hjust = 0.5))
+func.plot
+```
+
+\newpage
+
+### Exonic Function
+
+The variants in each sample were classified according to their exonic functions as follows.
+\       
+```{r ExonicFunc}
+if(!is.null(report.summary$annot$ExonicFunc)){
+  exonic=report.summary$annot$ExonicFunc
+  exonic=data.frame(ExonicFunc.Name=rownames(exonic), exonic, row.names = NULL)
+  table.exonic=exonic
+  table.exonic[,-1]=format(table.exonic[,-1],big.mark=",")
+  
+  exonic[,-1]=apply(exonic[,-1], 2, as.numeric)
+  stack.exonic=exonic
+  e.tot=colSums(exonic[,2:ncol(exonic)])
+  for(i in 1:length(e.tot)) stack.exonic[,i+1]=exonic[,i+1]/e.tot[i]
+  exonic.per=stack.exonic
+  exonic.per$Means=rowMeans(exonic.per[,-1])
+  exonic.per[,-1]=apply(exonic.per[,-1],2, function(a) specify_decimal(a*100,2))
+  table.exonic$Means=exonic.per$Means
+  colnames(table.exonic)[length(table.exonic)]="Means(%)"
+
+  t.exonic=t(stack.exonic)
+  t.exonic.name=t.exonic[1,]
+  t.exonic=t.exonic[-1,]
+  colnames(t.exonic)=t.exonic.name
+  trans.exonic.df=data.frame(Sample.Name=rownames(t.exonic), t.exonic, row.names = NULL)
+  trans.exonic.df[,-1]=apply(trans.exonic.df[,-1],2,as.numeric)
+
+  table.exonic.df=trans.exonic.df
+  table.exonic.df[,-1]=apply(table.exonic.df[,-1],2,function(a) specify_decimal(as.numeric(as.character(a))*100,1))
+  table.exonic.df.per=table.exonic.df
+  table.exonic.df.per[,-1]=apply(table.exonic.df[,-1],2,function(a) paste0(a,"%"))
+  o.table.exonic.df.per=table.exonic.df.per
+  colnames(o.table.exonic.df.per)=c('Sample\nName','frameshift\ndeletion','frameshift\ninsertion','non\nframeshift\ndeletion','non\nframeshift\ninsertion','non\nsynonymous\nSNV','stopgain','stoploss','synonymous\nSNV','unknown')
+
+  pander(o.table.exonic.df.per, justify = "center", style = "multiline", split.table = Inf, keep.line.breaks = TRUE , caption = "\t\t\t\t\tProportion(%) of  Exonic Variant Function in each sample")
+}
+```
+
+```{r}
+if(!is.null(report.summary$annot$ExonicFunc)){cat("frameshift deletion : Deletion of one or more nucleotides that cause frameshift changes in protein coding sequence","frameshift insertion : Insertion of one or more nucleotides that cause frameshift changes in protein coding sequence","nonframeshift deletion : Deletion of 3 or mutliples of 3 nucleotides that do not cause frameshift changes in protein coding sequence","nonframeshift insertion : Insertion of 3 or multiples of 3 nucleotides that do not cause frameshift changes in protein coding sequence","nonsynonymous SNV : A single nucleotide change that cause an amino acid change","stopgain : Variant causes a STOP codon","stoploss : Variant causes stop codon to be mutated into a non-stop codon","synonymous SNV : A single nucleotide change that does not cause an amino acid change","unknown : unknown function (due to various errors in the gene structure definition in the database file)",sep = "\n")}
+```
+\       
+\       
+
+### Exonic Function Plot
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=8}
+if(!is.null(report.summary$annot$ExonicFunc)) {
+exonic.df=melt(trans.exonic.df, id.vars = "Sample.Name")
+
+exonic.df$value=specify_decimal(as.numeric(as.character(exonic.df$value))*100,2)
+exonic.df$value=as.numeric(exonic.df$value)
+exonic.df$Sample.Name=factor(as.character(exonic.df$Sample.Name), levels = unique(exonic.df$Sample.Name))
+
+if(length(unique(exonic.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(exonic.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+
+exonicfunc.plot=ggplot(exonic.df ,aes(x=Sample.Name, y =value, fill=variable)) + geom_bar(stat = 'identity', position = 'stack',width=0.5) + coord_flip + opts + theme(legend.position="bottom", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold")) + labs(fill = "") + xlab("Sample Name") + ylab("Proportion(%)")+ggtitle("Proportion of Exonic Variant Function") +
+  theme(plot.title = element_text(hjust = 0.5))
+exonicfunc.plot
+}
+```
+
+\newpage
+
+### Mutation Type
+
+\       
+The variants in each sample were classified according to mutation type as follows.
+\       
+```{r mut.type, warning=FALSE}
+mut.type=report.summary$annot$mut.type
+mut.type=data.frame(mut.type=rownames(mut.type), mut.type, row.names = NULL)
+
+if(!is.element("indel",rownames(mut.type))) {
+  indel=rep(0,ncol(mut.type))
+  mut.type2=rbind(mut.type[1:3,], indel)
+  mut.type=rbind(mut.type2,mut.type[4:6,])
+  mut.type$mut.type[4]=as.character(mut.type$mut.type[4])
+  mut.type$mut.type[4]="indel"
+  rownames(mut.type)=1:length(rownames(mut.type))
+}
+table.mut.type=mut.type
+
+table.mut.type[4:6,]=mut.type[5:7,]
+table.mut.type[7,]=mut.type[4,]
+table.mut.type[,-1]=format(table.mut.type[,-1], big.mark=",")
+
+mut.type[,-1]=apply(mut.type[,-1], 2, as.numeric)
+stack.mut.type=mut.type
+mut.type.tot=colSums(mut.type[,2:ncol(mut.type)])
+for(i in 1:length(mut.type.tot)) stack.mut.type[,i+1]=mut.type[,i+1]/mut.type.tot[i]
+
+mut.type.per=stack.mut.type
+mut.type.per$Means=rowMeans(mut.type.per[,-1])
+mut.type.per[,-1]=apply(mut.type.per[,-1],2, function(a) specify_decimal(a*100,2))
+table.mut.type$Means=mut.type.per$Means
+colnames(table.mut.type)[length(table.mut.type)]="Means(%)"
+
+t.mut.type=t(stack.mut.type)
+t.mut.type.name=t.mut.type[1,]
+t.mut.type=t.mut.type[-1,]
+colnames(t.mut.type)=t.mut.type.name
+trans.mut.type.df=data.frame(Sample.Name=rownames(t.mut.type), t.mut.type, row.names = NULL)
+
+trans.mut.type.df[,-1]=apply(trans.mut.type.df[,-1],2,as.numeric)
+t.mut.type.df=trans.mut.type.df
+t.mut.type.df[,5:7]=trans.mut.type.df[,6:8]
+t.mut.type.df[,8]=trans.mut.type.df[,5]
+
+colnames(t.mut.type.df)[2]=('C>A/G>T(%)')
+colnames(t.mut.type.df)[3]=('C>G/G>C(%)')
+colnames(t.mut.type.df)[4]=('C>T/G>A(%)')
+colnames(t.mut.type.df)[5]=('T>A/A>T(%)')
+colnames(t.mut.type.df)[6]=('T>C/A>G(%)')
+colnames(t.mut.type.df)[7]=('T>G/A>C(%)')
+colnames(t.mut.type.df)[8]=('Indel(%)')
+
+table.mut.type.df=t.mut.type.df
+table.mut.type.df[,-1]=apply(table.mut.type.df[,-1],2,function(a) specify_decimal(as.numeric(as.character(a))*100,1))
+table.mut.type.df.per=table.mut.type.df
+table.mut.type.df.per[,-1]=apply(table.mut.type.df[,-1],2,function(a) paste0(a,","))
+table.mut.type.df2=table.mut.type.df
+colnames(table.mut.type.df2)[1]='Sample\nName'
+colnames(table.mut.type.df2)[2]=('C>A/\nG>T(%)')
+colnames(table.mut.type.df2)[3]=('C>G/\nG>C(%)')
+colnames(table.mut.type.df2)[4]=('C>T/\nG>A(%)')
+colnames(table.mut.type.df2)[5]=('T>A/\nA>T(%)')
+colnames(table.mut.type.df2)[6]=('T>C/\nA>G(%)')
+colnames(table.mut.type.df2)[7]=('T>G/\nA>C(%)')
+colnames(table.mut.type.df2)[8]=('Indel(%)') 
+pander(table.mut.type.df2, justify = "center", style = "multiline", split.table = Inf,caption = "\t\t\t\t\t\t\t\tProportion of SNP in each sample")
+cat("mut.type : Mutation type")
+
+```
+\       
+\       
+
+### Mutation Type Plot
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=8}
+   
+mut.type.df=melt(t.mut.type.df, id.vars = "Sample.Name")
+
+mut.type.df$value=as.numeric(specify_decimal(as.numeric(as.character(mut.type.df$value))*100,2))
+mut.type.df$Sample.Name=factor(as.character(mut.type.df$Sample.Name), levels = unique(mut.type.df$Sample.Name))
+
+if(length(unique(mut.type.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(mut.type.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+
+mut.type.plot=ggplot(mut.type.df, aes(x=Sample.Name, y=value , fill=variable)) + geom_bar(stat = 'identity', position = 'stack',width=0.5) + coord_flip + opts +
+              theme(legend.position="bottom",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold")) + labs(fill = "") +
+              xlab("Sample Name") + ylab("Proportion(%)") +ggtitle("Proportion of SNP") +
+  theme(plot.title = element_text(hjust = 0.5))
+mut.type.plot
+```
+
+
+
+

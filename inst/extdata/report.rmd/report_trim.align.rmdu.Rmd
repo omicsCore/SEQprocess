@@ -1,0 +1,167 @@
+
+## 2) Alignment summary
+
+\       
+Output data are saved at `r paste0(output.dir,"/01_trim",", 02_align and 03_rmdup")`
+\      
+
+```{r trim&align&rmdu ,warning=FALSE}
+trim.method=ifelse(is.element("trim",process.names),"trim","cutadpat")
+trim.df=report.summary[[trim.method]]
+trim.df=trim.df[,-4]
+
+R1=data.frame(trim.df[grep("R1|.1.fastq|_1.fq",trim.df$sample.names),])
+R2=data.frame(trim.df[grep("R2|.2.fastq|_2.fq",trim.df$sample.names),])
+
+R1$PER=sapply(as.character(R1[,5]), function(a) strsplit(a, split="bp")[[1]][2])
+R1[,5]=sapply(as.character(R1[,5]), function(a) strsplit(a, split="bp")[[1]][1])
+R2$PER=sapply(as.character(R2[,5]), function(a) strsplit(a, split="bp")[[1]][2])
+R2[,5]=sapply(as.character(R2[,5]), function(a) strsplit(a, split="bp")[[1]][1])
+
+total.df=data.frame(r1=as.numeric(as.character(R1[,2])),r2=as.numeric(as.character(R2[,2])))
+total.df=data.frame(Sample.Name=unique(sub(fq2.idx,"",sub(fq1.idx,"",trim.df$sample.names))),Total.reads=rowSums(total.df),Total.reads.R1=R1[,2],Total.reads.R2=R2[,2],Trimmed.base.R1=R1[,5],Trimmed.base.R2=R2[,5])
+
+align.method=if(is.element("tophat2",process.names)) "tophat2" else if(is.element("bwa-mem",process.names)) "bwa-mem" else if(is.element("bwa-aln",process.names)) "bwa-aln" 
+align.df=report.summary[[align.method]]
+rmdu.method=if(is.element("rmdu",process.names)) "rmdu" else if(is.element("rmdu_b",process.names)) "rmdu_b"
+rmdu.df=report.summary[[rmdu.method]]
+
+if(align.method=="tophat2") {
+  table.align=align.df
+  total.df$Aligned.read=as.numeric(table.align[,7])*2
+  total.df[is.na(total.df)]="."
+  align.percent=as.numeric(table.align[,7])*2/as.numeric(as.character(total.df[,2]))*100
+  align.percent[is.na(align.percent)]="."
+  total.df$Remove.Duplicates.Read=table.align[,2]-rmdu.df[,2]
+}else if(align.method=="bwa-mem"|align.method=="star") {
+  total.df$Aligned.read=as.numeric(align.df[,8])
+  align.percent=as.numeric(align.df[,8])/as.numeric(as.character(total.df[,2]))*100
+  total.df$Remove.Duplicates.Read=align.df[,2]-rmdu.df[,2]
+}
+
+
+
+rmdu.percent=as.numeric(total.df[,8])/as.numeric(as.character(total.df[,2]))*100
+total.df[,-1]=apply(total.df[,-1],2, as.numeric)
+total.df[is.na(total.df)]="."
+total.df[,-1]=total.df[,-1]/1000000
+total.df[,-1]=apply(total.df[,-1],2, function(a) format(a,big.mark = ","))
+
+total.df[,5]=paste(total.df[,5],R1$PER,sep='\n')
+total.df[,6]=paste(total.df[,6],R2$PER,sep='\n')
+align.percent=as.numeric(align.percent)
+
+if(align.method=="tophat2"|align.method=="bwa-mem") total.df[,7]=paste(total.df[,7],paste0('(',specify_decimal(align.percent,1),'%)'),sep='\n')
+if(align.method=="tophat2"|align.method=="bwa-mem") total.df[,8]=paste(total.df[,8],paste0('(',specify_decimal(rmdu.percent,1),'%)'),sep='\n')
+if(align.method=="tophat2"|align.method=="bwa-mem") align.rmdu.colname=c('Aligned\nReads','Duplicated\nRead') 
+colnames(total.df)=c('Sample\nName','Total\nReads','Total\nread\nR1','Total\nread\nR2','Trimmed\nbase\nR1','Trimmed\nbase\nR2',align.rmdu.colname)
+pander(total.df, justify = "center", style = "multiline", keep.line.breaks = TRUE, caption="\t\t\t\t\t\t\t\t\t\t (in Million)")
+
+  
+```
+
+```{r}
+cat("Sample Name : Sample name provided by user","Total reads : Total number of produced reads","Total read R1 : Total number of produced reads 1","Total read R2 : Total number of produced reads 2","Trimmed base R1: Number of Read 1 bases removed from the trimming process","Trimmed base R1 : Number of Read 2 bases removed from the trimming process","Aligned Reads : Total number of aligned read","Duplicated Read : Total number of Duplicated read",sep="\n")
+```
+
+\newpage
+
+## (2) Result plot of Alignment
+
+\       
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=7}
+if(align.method=="bwa-mem"|align.method=="star") {
+    align.perc=align.df[,c(1,5,7,11,13)]
+    colnames(align.perc)[1]="Sample.Name"
+    stack.df=melt(align.perc, id.vars = "Sample.Name")
+    stack.df[3]=as.numeric(stack.df[,3])*100
+    stack.df$treat=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.")[[1]][3])
+    stack.df$state=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.R")[[1]][1])
+    
+    if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+    if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+    plot.stack.df=stack.df[rev(rownames(stack.df)),]
+    plot.stack.df$Sample.Name=as.factor(plot.stack.df$Sample.Name)
+    align.plot=ggplot(stack.df, aes(x = Sample.Name, y = value, fill = state)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +
+      coord_flip +scale_fill_manual(values=c("goldenrod1", "lightpink2","skyblue"),labels=c("Mapped reads","Unmapped reads"))+
+      theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+      xlab("Sample Name") + opts + labs(fill = "") + ylab("Proportion(%)")+ facet_wrap(~treat)
+    align.plot+ggtitle("Mapping proportion in each sample") + theme(plot.title = element_text(hjust = 0.5))+scale_x_discrete(limits =
+    rev(levels(plot.stack.df$Sample.Name)))         
+}else if(align.method=="tophat2") {
+  
+  align.perc=align.df
+  align.perc[,c(3:7)]=apply(align.df[,c(3:7)], 2, function(a) as.numeric(a)/as.numeric(align.df[,2])*200)
+  align.perc=data.frame(align.perc)
+  align.perc=align.perc[,-2]
+  align.perc[,-1]= apply(align.perc[,-1],2, as.numeric)
+  align.perc[,7]=100-align.perc[,2]
+  align.perc[,8]=100-align.perc[,3]
+  align.stack.perc=align.perc[,-6]
+  align.stack.perc[,2]=as.numeric(align.stack.perc[,2])-as.numeric(align.stack.perc[,4])
+  align.stack.perc[,3]=as.numeric(align.stack.perc[,3])-as.numeric(align.stack.perc[,5])
+  colnames(align.stack.perc)=c("Sample.Name","Mapped_Reads_R1", "Mapped_Reads_R2", "Multi-mapped_Reads_R1", "Multi-mapped_Reads_R2", "Unmapped_Reads_R1","Unmapped_Reads_R2")
+  stack.df=melt(align.stack.perc, id.vars = "Sample.Name")
+  stack.df$value=as.numeric(specify_decimal(as.numeric(stack.df$value),2))
+  sep.r=strsplit(x = as.character(stack.df$variable),split = "_")
+  
+  for(i in 1:length(stack.df[,1])) stack.df$treat[i]=sep.r[[i]][3]
+  for(i in 1:length(stack.df[,1])) stack.df$state[i]=paste0(sep.r[[i]][-3], collapse = "_")
+  
+  class(stack.df$value)
+  if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+  if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+               
+  align.plot=ggplot(stack.df, aes(x = Sample.Name, y = value, fill = state)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +coord_flip +
+             scale_fill_manual(values=c("goldenrod1", "lightpink2","skyblue"),labels=c("Mapped reads","Multi-Mapped reads","Unmapped reads"))+
+             theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+             xlab("Sample Name") + opts + labs(fill = "") + ylab("Proprotion(%)") + facet_wrap(~treat)
+
+  align.plot+ggtitle("Mapping proportion in each sample") + theme(plot.title = element_text(hjust = 0.5))+scale_x_discrete(limits =
+    rev(levels(stack.df$Sample.Name)))
+  }
+
+
+```
+
+\newpage
+
+## (3) Result plot of Remove Duplicates(with alignment infomation)
+
+\       
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=7}
+df=report.summary[[rmdu.method]]
+table.rmdu=df
+
+
+if(align.method=="bwa-mem"|align.method=="tophat2"|align.method=="star") {
+  align.df[,-1]=apply(align.df[,-1],2, as.numeric)
+  df[,-1]=apply(df[,-1],2,as.numeric)
+  rmdu.df=df[,c(1,2,14:17)]
+  rmdu.df[,4]=rmdu.df[,3]/align.df[,2]
+  rmdu.df[,6]=rmdu.df[,5]/align.df[,2]
+  rmdu.df$Duplicated.reads=align.df[,2]-rmdu.df[,2]
+  rmdu.df$Duplicated.reads.pct=rmdu.df[,7]/align.df[,2]
+  rmdu.df[,2]=align.df[,2]
+}
+
+
+if(align.method=="bwa-mem"|align.method=="tophat2"|align.method=="star") {
+  stack.df=melt(rmdu.df[,c(1,4,6,8)], id.vars = "sample.names")
+  stack.df[3]=as.numeric(stack.df[,3])*100
+  
+  if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+  if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+  
+  rmdu.plot=ggplot(stack.df, aes(x=sample.names, y =value, fill=variable)) + 
+            geom_bar(stat = 'identity', position = 'stack',width=0.5) + 
+            coord_flip + opts +
+            theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold")) + labs(fill = "") +
+            scale_fill_manual(values=c("goldenrod1", "lightpink2", "#56B4E9"),labels=c("Mapped reads", "Unmapped reads", "Duplicated reads")) + xlab("Sample Name") + ylab("Proportion(%)")
+}
+
+
+rmdu.plot +ggtitle("Duplicates Proportion in each sample") + theme(plot.title = element_text(hjust = 0.5))
+```

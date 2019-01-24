@@ -1,0 +1,72 @@
+
+
+### 2)Trimming summary
+
+\       
+Output summary is saved at `r paste0(output.dir,"/01_trim")`.
+\ 
+
+
+####(1)Table of trimmed sequence
+
+\       
+
+```{r trim}
+if(input.params$parameter[input.params$name=="trim.method"]=="trim.g") cat("Quality control using Trim_galore") else if(input.params$parameter[input.params$name=="trim.method"]=="cutadapt") cat("Quality control using Cutadapt")
+trim.method=input.params$parameter[input.params$name=="trim.method"]
+if(trim.method=="trim.galore"){
+  trim.df=report.summary$trim
+  trim.df=trim.df[,-4]
+  Reads.with.adapters2=sapply(as.character(trim.df[,3]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  Quality.trimmed2=sapply(as.character(trim.df[,5]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  Total.written.filtered2=sapply(as.character(trim.df[,6]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  trim.df2=data.frame(Sample.Names=trim.df$sample.names, Total.reads.processed=as.numeric(as.character(trim.df$Total.reads.processed))/1000,
+                      Reads.with.adapters=sapply(as.character(trim.df[,3]), function(a) as.numeric(strsplit(a, split="\\(")[[1]][1]))/1000,
+                      Total.basepairs.processed=sapply(as.character(trim.df[,4]), function(a) as.numeric(strsplit(a, split="bp")[[1]][1]))/1000,
+                      Quality.trimmed=sapply(as.character(trim.df[,5]), function(a) as.numeric(strsplit(a, split="bp")[[1]][1]))/1000,
+                      Total.written.filtered=sapply(as.character(trim.df[,6]), function(a) as.numeric(strsplit(a, split="bp")[[1]][1]))/1000,row.names = NULL)
+  trim.df2[,-1]=apply(trim.df2[,-1],2, function(a) format(specify_decimal(as.numeric(a),0),big.mark = ","))
+  trim.df2[,3]=paste(trim.df2[,3],paste0("(",Reads.with.adapters2,"%)"),sep = '\n')
+  trim.df2[,4]=paste(trim.df2[,4],paste0("(",Quality.trimmed2,"%)"),sep = '\n')
+  trim.df2[,5]=paste(trim.df2[,5],paste0("(",Total.written.filtered2,"%)"),sep = '\n')
+  colnames(trim.df2)[1]='Sample\nName'
+  colnames(trim.df2)[2]='Total\nreads\nprocessed'
+  colnames(trim.df2)[3]='Reads\nwith\nadapters'
+  colnames(trim.df2)[4]='Total\nbasepairs\nprocessed(bp)'
+  colnames(trim.df2)[5]='Quality\ntrimmed(bp)'
+  colnames(trim.df2)[6]='Total\nwritten\nfiltered(bp)'
+  pander(trim.df2, justify = "center", style = "multiline",keep.line.breaks = TRUE,caption="(In Thousand)Result of trimmed reads")
+  
+}else if(trim.method=="cutadapt"){ 
+  trim.df=report.summary$cutadapt
+  trim.df=trim.df[,-4]
+  Reads.with.adapters2=sapply(as.character(trim.df[,3]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  Quality.trimmed2=sapply(as.character(trim.df[,4]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  Total.written.filtered2=sapply(as.character(trim.df[,6]), function(a) strsplit(a, split="\\(|\\%")[[1]][2])
+  
+  trim.df2=data.frame(Sample.Names=trim.df$sample.names, Total.reads.processed=as.numeric(as.character(trim.df$Total.reads.processed))/1000,
+                      Reads.with.adapters=sapply(as.character(trim.df[,3]), function(a) as.numeric(strsplit(a, split="\\(")[[1]][1]))/1000,
+                      Total.basepairs.processed=sapply(as.character(trim.df[,5]), function(a) as.numeric(strsplit(a, split="bp")[[1]][1]))/1000,
+                      Total.written.filtered=sapply(as.character(trim.df[,6]), function(a) as.numeric(strsplit(a, split="bp")[[1]][1]))/1000,row.names = NULL)
+  trim.df2[,-1]=apply(trim.df2[,-1],2, function(a) format(specify_decimal(as.numeric(a),0),big.mark = ","))
+  trim.df2[,3]=paste(trim.df2[,3],paste0("(",Reads.with.adapters2,"%)"),sep = '\n')
+  trim.df2[,5]=paste(trim.df2[,5],paste0("(",Total.written.filtered2,"%)"),sep = '\n')
+  colnames(trim.df2)[1]='Sample\nName'
+  colnames(trim.df2)[2]='Total\nreads\nprocessed'
+  colnames(trim.df2)[3]='Reads\nwith\nadapters'
+  colnames(trim.df2)[4]='Total\nbasepairs\nprocessed(bp)'
+  colnames(trim.df2)[5]='Total\nwritten\nfiltered(bp)'
+  pander(trim.df2, justify = "center", style = "multiline",keep.line.breaks = TRUE,caption="\t\t\t\t\t\t\t(In Thousand)Result of trimmed reads")
+  }
+
+```
+```{r}
+if(trim.method=="trim.g"){
+  cat("Sample Name : Sample name provided by user","Total reads processed : Total number of produced reads","Reads with adapters : Number of reads including adapter sequence","Total basepairs processed(bp) : Total number of produced base","Quality trimmed(bp) : Number of base with quality score less than the trim.quality(Input)","Total written filtered(bp) : Number of bases filtered out in the trimmed process",sep="\n")
+  
+}else if(trim.method=="cutadapt"){
+  cat("Sample Name : Sample name provided by user","Total reads processed : Total number of produced reads","Reads with adapters : Number of reads including adapter sequence","Total basepairs processed(bp) : Total number of produced base","Total written filtered(bp) : Number of bases filtered out in the trimmed process",sep="\n")
+} 
+```
+\     
+\     

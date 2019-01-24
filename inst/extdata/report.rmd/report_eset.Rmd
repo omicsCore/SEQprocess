@@ -1,0 +1,7 @@
+\      
+
+### Expression Set
+
+A total of `r length(Sample_ID)` sample including `r report.summary$make.Set$expression.set$total_feature` features.
+
+\      
