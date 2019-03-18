@@ -1,0 +1,15 @@
+
+## Robject
+
+\        
+output data is saved at `r paste0(output.dir,"09_Robject")`.
+\        
+
+```{r child='report_eset.Rmd',eval=report.summary$make.Set$eSet.eval}
+```
+
+```{r child='report_vset.Rmd',eval=report.summary$make.Set$vset.eval}
+```
+
+```{r child='report_cset.Rmd',eval=report.summary$make.Set$cset.eval}
+```

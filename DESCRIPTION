@@ -1,0 +1,15 @@
+Package: SEQprocess
+Type: Package
+Title: R-based pipelines for NGS data processing
+Version: 0.99.0
+Date: 2018-1-3
+Author: Hyun Goo Woo
+Maintainer: Hyun Goo Woo  <HyunGooWoo@gmail.com>
+Description: R-based pipelines for NGS data processing
+License: GPL2
+biocViews: Alignment, Annotation, Preprocessing, QualityControl, GenomeAssembly
+RoxygenNote: 6.0.1
+Suggests: knitr, BiocStyle
+Depends: R (>= 3.3.2)
+Imports: parallel, rmarkdown, GenomicRanges, limma, R.utils, Biobase, SummarizedExperiment, GenomeInfoDbData, DelayedArray, sequenza, copynumber, data.table, fastqcr, pander, png
+Encoding: UTF-8

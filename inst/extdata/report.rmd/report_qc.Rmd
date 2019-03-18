@@ -1,0 +1,128 @@
+
+## 1)FASTQC
+
+## (1) Table of FASTQC
+
+```{r fastqc}
+fastqc.df=report.summary$qc$report
+fastqc.df[,3]=format(as.numeric(fastqc.df[,3]),big.mark = ",")
+colnames(fastqc.df)[2]="GC(%)"
+colnames(fastqc.df)[3]='Total\nReads'
+colnames(fastqc.df)[4]='Read\nlength(bp)'
+colnames(fastqc.df)[5]='Phred Score\n(>30)(%)'
+fastqc.df2=fastqc.df
+colnames(fastqc.df2)[1]='File name'
+pander(fastqc.df2, justify = "center", style = "multiline", keep.line.breaks = TRUE,split.cells = c("30%","10%","30%","10%","20%"))
+```  
+```{r}
+cat("File name : Filename provided by user","GC(%) : GC ratio of the total bases","Total reads : Total number of produced reads","Read length(bp) : length of produced reads","Phred Score(>30)(%) : Phred Quality score is a value about probability that a base has been \n  called correctly based on a scale from 10 to 60(Q = -10 log 10 (error rate)).\n  Phred Score(>30)(Q>30) indicates a 99.9% certainty that the base has been called correctly.\n  This is considered high quality data.\n  (Q30 = 99.9% certainty (1/1,000 chance of an incorrect base call))",sep="\n")
+```
+
+\newpage
+
+## (2) FastQC summary
+
+Output summary is saved at `r paste0(output.dir,"/00_qc")`.
+\       
+\       
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=11, fig.width=9}
+colnames(fastqc.df)[5]=c("PhredScore")
+
+fq1.idx=".1.fastq$|_R1.fastq$|.1_val_1.fq$|_1.fq$|_R1|.R1"
+fq2.idx=".2.fastq$|_R2.fastq$|.2_val_2.fq$|_2.fq$|_R2|.R2"
+fastqc.df$Reads=NA
+fastqc.df$Reads[grep(".1$|_1.fq$", fastqc.df[,1])]=sub(".1$|_1.fq$","",fastqc.df$Filename[grep(".1$|_1.fq$", fastqc.df[,1])])
+fastqc.df$Reads[grep(".2$|_2.fq$", fastqc.df[,1])]=sub(".2$|_2.fq$","",fastqc.df$Filename[grep(".2$|_2.fq$", fastqc.df[,1])])
+
+if(length(unique(fastqc.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(fastqc.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+
+plot.fastqc.df=fastqc.df[rev(rownames(fastqc.df)),]
+plot.fastqc.df$Filename=as.factor(plot.fastqc.df$Filename)
+
+if(length(plot.fastqc.df$Filename)>70) {
+  first.df=NULL
+  first.df=plot.fastqc.df[1:70,]
+  g=ggplot(data = first.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(first.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(first.df$Filename)))
+}else {
+  g=ggplot(data=plot.fastqc.df, aes(x=Filename, y=PhredScore, fill=Reads)) + geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(fastqc.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(plot.fastqc.df$Filename)))
+}
+```
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=12, fig.width=9}
+if(length(plot.fastqc.df$Filename)>140) {
+  second.df=NULL
+  second.df=plot.fastqc.df[70:140,]
+  g=ggplot(data = second.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(second.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(second.df$Filename)))
+}else if(length(plot.fastqc.df$Filename)>70&length(plot.fastqc.df$Filename)<140) {
+  second.df=NULL
+  second.df=plot.fastqc.df[70:length(plot.fastqc.df$Filename),]
+  g=ggplot(data = second.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(second.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(second.df$Filename)))
+}
+
+```
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=12, fig.width=9}
+if(length(plot.fastqc.df$Filename)>210) {
+  third.df=NULL
+  third.df=plot.fastqc.df[140:210,]
+  g=ggplot(data = third.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(third.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(third.df$Filename)))
+}else if(length(plot.fastqc.df$Filename)>140&length(plot.fastqc.df$Filename)<210) {
+  third.df=NULL
+  third.df=plot.fastqc.df[70:length(plot.fastqc.df$Filename),]
+  g=ggplot(data = third.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(third.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(third.df$Filename)))
+}
+```
+
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=12, fig.width=9}
+if(length(plot.fastqc.df$Filename)>210) {
+  four.t.df=NULL
+  four.t.df=plot.fastqc.df[210:length(plot.fastqc.df$Filename),]
+  g=ggplot(data = four.t.df,aes(x=Filename,y=PhredScore, fill=Reads))+geom_bar(stat="identity", position=position_dodge() ,width=0.5)
+  g+theme_minimal()+coord_flip+scale_fill_manual(values=rep(c("skyblue", "steelblue"),length(unique(four.t.df[,6]))))+ylab("Proportion(%)") + opts + theme(legend.position="none",axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold",size=7)) + xlab("File Name") + labs(fill = "") +ggtitle("Proportion of reads with a quality score of 30 or higher") +
+  theme(plot.title = element_text(hjust = 0.5,size = 18))+scale_x_discrete(limits = rev(levels(four.t.df$Filename)))
+}
+```
+
+\newpage
+
+```{r per.base.plot, warning=FALSE,fig.height=11,fig.width=22,message=FALSE}
+fastqc1.idx=".1.fastqc$|_R1.fastqc$|.1_val_1.fq$|_1.fq$|_R1|_1_fastqc|.1_fastqc|_R1_fastqc|.R1_fastqc|.R1|.1$"
+fastqc2.idx=".2.fastqc$|_R2.fastqc$|.2_val_2.fq$|_2.fq$|_R2|_2_fastqc|.2_fastqc|_R2_fastqc|.R2_fastqc|.R2|.2$"
+samplename=sub(paste(fastqc1.idx,fastqc2.idx, sep = "|"),"",fastqc.df[,1])
+samplename.df=data.frame(Filename=unique(samplename))
+
+qc.figure.path=dir(file.path(output.dir), "per_base_quality.png$", recursive=TRUE, full.names=TRUE)
+if(type!="miRSEQ"){
+  for(i in 1:length(unique(samplename))){
+  Sample.name=unique(samplename)[i]
+  cat(paste0(Sample.name," : Read 1, Read 2"))
+  img1<- rasterGrob(as.raster(readPNG(qc.figure.path[2*i-1])),interpolate = FALSE)
+  img2<- rasterGrob(as.raster(readPNG(qc.figure.path[2*i])),interpolate = FALSE)
+  grid.arrange(img1,img2, ncol=2)
+  }
+}
+```
+
+```{r single.end_per.base.plot, warning=FALSE,fig.height=2.5,fig.width=3.5,message=FALSE}
+if(type=="miRSEQ"){
+  for(i in 1:length(unique(samplename))){
+  Sample.name=unique(samplename)[i]
+  cat(Sample.name)
+  img<- rasterGrob(as.raster(readPNG(qc.figure.path[i])),interpolate = FALSE)
+  grid.arrange(img, ncol=1)
+  }}
+```
+

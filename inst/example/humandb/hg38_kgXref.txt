@@ -1,0 +1,6 @@
+uc031tla.1	NR_128720			MIR6859-3	NR_128720	NR_128720	Homo sapiens microRNA 6859-4 (MIR6859-4), microRNA. (from RefSeq NR_128720)		
+uc057aty.1				RP11-34P13.3			RP11-34P13.3 (from geneSymbol)		
+uc057atz.1				RP11-34P13.3			RP11-34P13.3 (from geneSymbol)		
+uc031tlb.1	NR_036051			MIR1302-9	NR_036051	NR_036051	Homo sapiens microRNA 1302-2 (MIR1302-2), microRNA. (from RefSeq NR_036051)		
+uc001aak.4	NR_026822			FAM138A	NR_026822	NR_026822	Homo sapiens family with sequence similarity 138, member C (FAM138C), long non-coding RNA. (from RefSeq NR_026822)		
+uc057aua.1	AY341950			FAM138A			family with sequence similarity 138, member A (from HGNC FAM138A)		

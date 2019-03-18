@@ -1,0 +1,127 @@
+## Remove Duplicates
+
+\       
+
+## (1) Table of Remove Duplicates
+
+\       
+
+```{r rmdu}
+
+df=report.summary[[rmdu.method]]
+df=df[,1:13]
+df[,-1]=apply(df[,-1],2,as.numeric)
+
+rmdu.perc.df=rbind(df[,-1], colMeans(df[,-1]))
+rmdu.perc.df=data.frame(Name=c(as.character(df$sample.names), "Means"), rmdu.perc.df)
+  
+colnames(rmdu.perc.df)[1]="Sample Name"
+colnames(rmdu.perc.df)[2]="Total Reads"
+colnames(rmdu.perc.df)[3]="PF Reads"
+colnames(rmdu.perc.df)[4]="Mapped Reads R1"
+colnames(rmdu.perc.df)[6]="Mapped Reads R2"
+colnames(rmdu.perc.df)[8]="Paired-mapped Reads"
+colnames(rmdu.perc.df)[10]="Unmapped Reads R1"
+colnames(rmdu.perc.df)[12]="Unmapped Reads R2"
+
+colnames(rmdu.perc.df)[c(5,7,9,11,13)]="%"
+  
+rmdu.perc.df[,c(5,7,9,11,13)]=apply(rmdu.perc.df[,c(5,7,9,11,13)],2, function(a) specify_decimal(as.numeric(a),3))
+rmdu.perc.df[,c(2,3,4,6,8,10,12)]=apply(rmdu.perc.df[,c(2,3,4,6,8,10,12)],2, function(a) format(a,big.mark = ","))
+  
+pander(rmdu.perc.df, justify = "center", style = "multiline", split.table = Inf)
+
+```
+
+```{r}
+cat("Sample Name : Sample name provided by user","Total Reads : Total number of read filtered out in the remove duplicates process","PF reads : The number of PF reads where PF is defined as passing Illumina's filter","Mapped Reads R1 : Total number of aligned read 1","Mapped Reads R2 :  Total number of aligned read 2","Paired-mapped Reads : Total number of read aligned to the pair","Unmapped Reads R1 : Total number of unmapped read 1 (Unmapped Reads 1= Total Reads 1 - Mapped Reads 1)","Unmapped Reads R2 : Total number of unmapped read 2 (Unmapped Reads 2= Total Reads 2 - Mapped Reads 2)",sep="\n" )
+```
+
+\newpage
+
+## (2) Result plot of Remove Duplicates
+
+\       
+\        
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=5, fig.width=6}
+rmdu.perc=df[,c(1,5,7,11,13)]
+stack.df=melt(rmdu.perc, id.vars = "sample.names")
+stack.df[3]=as.numeric(stack.df[,3])*100
+stack.df$treat=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.")[[1]][3])
+stack.df$state=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.R")[[1]][1])
+  
+if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+               
+align.plot=ggplot(stack.df, aes(x = sample.names, y = value, fill = state)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +coord_flip +
+           scale_fill_manual(values=c("goldenrod1", "lightpink2","skyblue"))+
+           theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+           xlab("Sample Name") + opts + labs(fill = "") + ylab("Proportion(%)")+ facet_wrap(~treat)
+align.plot +ggtitle("Duplicates Proportion in each sample") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+\newpage
+
+## Table of Remove Duplicates(with alignment infomation)
+
+```{r warning=FALSE}
+df=report.summary[[rmdu.method]]
+table.rmdu=df
+align.df=report.summary[[align.method]]
+
+align.df[,-1]=apply(align.df[,-1],2, as.numeric)
+df[,-1]=apply(df[,-1],2,as.numeric)
+rmdu.df=df[,c(1,2,14:17)]
+rmdu.df[,4]=rmdu.df[,3]/align.df[,2]
+rmdu.df[,6]=rmdu.df[,5]/align.df[,2]
+rmdu.df$Duplicated.reads=align.df[,2]-rmdu.df[,2]
+rmdu.df$Duplicated.reads.pct=rmdu.df[,7]/align.df[,2]
+rmdu.df[,2]=align.df[,2]
+
+
+dup.df=rmdu.df                         
+dup.df[,c(4,6,8)]=apply(dup.df[,c(4,6,8)],2, function(a) specify_decimal(a,3))
+dup.df[,c(2,3,5,7)]=apply(dup.df[,c(2,3,5,7)],2, function(a) format(a,big.mark=","))
+
+Unique.Mapped.Reads2=paste0(dup.df$Mapped.reads.pct)
+Unmapped.Reads2=dup.df$Unmapped.reads.pct
+Duplicate.Reads2=dup.df$Duplicated.reads.pct  
+dup.df=dup.df[,c(1:3,5,7)]
+dup.df[,3]=paste(dup.df[,3],paste0('(',Unique.Mapped.Reads2,'%)'),sep='\n')
+dup.df[,4]=paste(dup.df[,4],paste0('(',Unmapped.Reads2,'%)'),sep='\n')
+dup.df[,5]=paste(dup.df[,5],paste0('(',Duplicate.Reads2,'%)'),sep='\n')
+colnames(dup.df)[1]=c('Sample\nName')
+colnames(dup.df)[2]=c('Total\nReads')
+colnames(dup.df)[3]=c('Unique\nMapped\nReads')
+colnames(dup.df)[4]=c('Unmapped\nReads')
+colnames(dup.df)[5]=c('Duplicated\nReads')
+pander(dup.df, justify = "center", style = "multiline", split.table = Inf)
+
+```
+
+```{r}
+cat("Sample Name : Sample name provided by user","Total Reads : Total number of read filtered out in the trimmed process","Unique Mapped Reads : Total number of uniquely aligned read","Unmapped Reads : Total number of unmapped read (Unmapped Reads = Total Reads(With duplicate removed) - Unique Mapped Reads)","Duplicated Reads : Total number of duplicated read (removed)",sep="\n")
+```
+
+\newpage
+
+## Result plot of Remove Duplicates(with alignment infomation)
+\       
+\       
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=5, fig.width=6}
+stack.df=melt(rmdu.df[,c(1,4,6,8)], id.vars = "sample.names")
+stack.df[3]=as.numeric(stack.df[,3])*100
+
+if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+
+rmdu.plot=ggplot(stack.df, aes(x=sample.names, y =value, fill=variable)) + 
+          geom_bar(stat = 'identity', position = 'stack',width=0.5) + 
+          coord_flip + opts +
+          theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold")) + labs(fill = "") +
+          scale_fill_manual(values=c("goldenrod1", "lightpink2", "#56B4E9")) + xlab("Sample Name") + ylab("Proportion(%)")
+
+rmdu.plot
+```
+
+\newpage

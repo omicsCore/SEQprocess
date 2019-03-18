@@ -1,0 +1,206 @@
+## 3) Alignment Summary
+
+\       
+Output is saved at `r paste0(output.dir,"/02_align")`
+\       
+
+## (1) Table of Alignment
+
+\       
+\       
+```{r align}
+align.df=report.summary[[align.method]]
+
+if(align.method=="bwa-mem"|align.method=="star") {
+  align.df=align.df[,1:13]
+  align.df[,-1]=apply(align.df[,-1],2,as.numeric)
+  
+  align.perc.df=align.df[,c(1:4,6,8,10,12)]
+  align.perc.df[,-1]=apply(align.perc.df[,-1],2, function(a) format(a/1000000,big.mark = ","))
+  
+  Mapped.Reads.R1.pct=specify_decimal(align.df$Mapped.reads.R1.pct,3)
+  Mapped.Reads.R2.pct=specify_decimal(align.df$Mapped.reads.R2.pct,3)
+  Paired.Mapped.pct=specify_decimal(align.df$Paired.Mapped.pct,3)
+  Unmapped.reads.R1.pct=specify_decimal(align.df$Unmapped.reads.R1.pct,3)
+  Unmapped.reads.R2.pct=specify_decimal(align.df$Unmapped.reads.R2.pct,3)
+  
+  align.perc.df[,4]=paste(align.perc.df[,4],paste0('(',Mapped.Reads.R1.pct,'%)'),sep = '\n')
+  align.perc.df[,5]=paste(align.perc.df[,5],paste0('(',Mapped.Reads.R2.pct,'%)'),sep = '\n')
+  align.perc.df[,6]=paste(align.perc.df[,6],paste0('(',Paired.Mapped.pct,'%)'),sep = '\n')
+  align.perc.df[,7]=paste(align.perc.df[,7],paste0('(',Unmapped.reads.R1.pct,'%)'),sep = '\n')
+  align.perc.df[,8]=paste(align.perc.df[,8],paste0('(',Unmapped.reads.R2.pct,'%)'),sep = '\n')
+  
+  colnames(align.perc.df)[1]='Sample\nName'
+  colnames(align.perc.df)[2]='Total\nReads'
+  colnames(align.perc.df)[3]='PF\nReads'
+  colnames(align.perc.df)[4]='Mapped\nReads\nR1'
+  colnames(align.perc.df)[5]='Mapped\nReads\nR2'
+  colnames(align.perc.df)[6]='Paired-mapped\nReads'
+  colnames(align.perc.df)[7]='Unmapped\nReads\nR1'
+  colnames(align.perc.df)[8]='Unmapped\nReads\nR2'
+  
+  pander(align.perc.df, justify = "center", style = "multiline", keep.line.breaks = TRUE,missing = '.',caption = "(In Million) Summary table of Alignment\n")
+  }
+```
+
+```{r}
+if(align.method=="bwa-mem") {
+  cat("Sample Name : Sample name provided by user","Total Reads : Total number of read filtered out in the remove duplicates process","PF reads : The number of PF reads where PF is defined as passing Illumina's filter","Mapped Reads R1 : Total number of aligned read 1","Mapped Reads R2 :  Total number of aligned read 2","Paired-mapped Reads : Total number of read aligned to the pair","Unmapped Reads R1 : Total number of unmapped read 1 (Unmapped Reads 1= Total Reads 1 - Mapped Reads 1) ","Unmapped Reads R2 : Total number of unmapped read 2 (Unmapped Reads 2= Total Reads 2 - Mapped Reads 2)", sep = "\n")
+}
+```
+
+```{r warning=FALSE}
+align.df=report.summary[[align.method]]
+if(align.method=="tophat2") {
+  table.align=align.df
+  table.align[,-1]=apply(table.align[,-1],2, as.numeric)
+  table.align[,8]=table.align[,2]/2-table.align[,3]
+  table.align[,9]=table.align[,2]/2-table.align[,4]
+  
+  colnames(table.align)=c("Sample.Name", "Total_Reads", "Mapped_Reads_R1", "Mapped_Reads_R2", "Multi_mapped_Reads_R1", 
+                       "Multi_mapped_Reads_R2", "Paired_mapped_Reads","Unmapped_Reads_R1","Unmapped_Reads_R2")
+  align.perc=align.df
+  align.perc[,c(3:7)]=apply(align.df[,c(3:7)], 2, function(a) as.numeric(a)/as.numeric(align.df[,2])*200)
+  align.perc=data.frame(align.perc)
+  align.perc=align.perc[,-2]
+  align.perc[,-1]= apply(align.perc[,-1],2, as.numeric)
+  align.perc[,7]=100-align.perc[,2]
+  align.perc[,8]=100-align.perc[,3]
+  align.perc.2=align.perc
+  
+  align.perc.2[,-1]=apply(align.perc.2[,-1],2, function(a) specify_decimal(as.numeric(a),1))
+  
+  align.perc.2[align.perc.2=="NA"]="."
+  colnames(align.perc.2)=c("Sample.Name","Mapped_Reads_R1", "Mapped_Reads_R2", "Multi_mapped_Reads_R1", "Multi_mapped_Reads_R2", "Paired_mapped_Reads","Unmapped_Reads_R1","Unmapped_Reads_R2")
+  table.align[,-1]=apply(table.align[,-1],2, function(a) as.character(format(as.numeric(specify_decimal(as.numeric(as.character(a))/1000,1)),big.mark=",")))
+  table.align[table.align=="NA"]="."
+  table.align[table.align==" NA"]="."
+  Mapped_Reads_R1_2=align.perc.2$Mapped_Reads_R1
+  Mapped_Reads_R2_2=align.perc.2$Mapped_Reads_R2
+  Multi_mapped_Reads_R1_2=align.perc.2$Multi_mapped_Reads_R1
+  Multi_mapped_Reads_R2_2=align.perc.2$Multi_mapped_Reads_R2
+  Paired_mapped_Reads2=align.perc.2$Paired_mapped_Reads
+  Unmapped_Reads_R1_2=align.perc.2$Unmapped_Reads_R1
+  Unmapped_Reads_R2_2=align.perc.2$Unmapped_Reads_R2
+  table.align[,3]=paste(table.align[,3],paste0("(",Mapped_Reads_R1_2,"%)"),sep = '\n')
+  table.align[,4]=paste(table.align[,4],paste0("(",Mapped_Reads_R2_2,"%)"),sep = '\n')
+  table.align[,5]=paste(table.align[,5],paste0("(",Multi_mapped_Reads_R1_2,"%)"),sep = '\n')
+  table.align[,6]=paste(table.align[,6],paste0("(",Multi_mapped_Reads_R2_2,"%)"),sep = '\n')
+  table.align[,7]=paste(table.align[,7],paste0("(",Paired_mapped_Reads2,"%)"),sep = '\n')
+  table.align[,8]=paste(table.align[,8],paste0("(",Unmapped_Reads_R1_2,"%)"),sep = '\n')
+  table.align[,9]=paste(table.align[,9],paste0("(",Unmapped_Reads_R2_2,"%)"),sep = '\n')
+  
+  colnames(table.align)[1]=c('Sample\nName')
+  colnames(table.align)[2]=c('Total\nReads')
+  colnames(table.align)[3]=c('Mapped\nReads\nR1')
+  colnames(table.align)[4]=c('Mapped\nReads\nR2')
+  colnames(table.align)[5]=c('Multi-mapped\nReads R1')
+  colnames(table.align)[6]=c('Multi-mapped\nReads R2')
+  colnames(table.align)[7]=c('Paired-mapped\nReads R1')
+  colnames(table.align)[8]=c('Unmapped\nReads R1')
+  colnames(table.align)[9]=c('Unmapped\nReads R2')
+  
+  pander(table.align, justify = "center", style = "multiline", split.table = Inf,keep.line.breaks = TRUE, missing = '.',caption = "(In Thousand) Summary table of Alignment\n" )
+  }
+
+```
+
+```{r}
+if(align.method=="tophat2") {
+  cat("Sample Name : Sample name provided by user","Total Reads : Total number of read filtered out in the remove duplicates process","Mapped Reads R1 : Total number of aligned read 1","Mapped Reads R2 :  Total number of aligned read 2","Multi-Mapped Reads 1 : Total number of read 1 aligned multiple times","Multi-Mapped Reads 2 : Total number of read 2 aligned multiple times","Paired-mapped Reads : Total number of read aligned to the pair","Unmapped Reads R1 : Total number of unmapped read 1 (Unmapped Reads 1= Total Reads 1 - Mapped Reads 1)","Unmapped Reads R2 : Total number of unmapped read 2 (Unmapped Reads 2= Total Reads 2 - Mapped Reads 2)",sep = "\n")
+}
+```
+
+```{r}
+align.df=report.summary[[align.method]]
+
+if(align.method=="bwa-aln") {
+  align.df[,-1]=apply(align.df[,-1],2,as.numeric)
+  
+  align.perc.df=align.df[,c(1:4,6)]
+  align.perc.df[,-1]=apply(align.perc.df[,-1],2, function(a) format(a/1000,big.mark = ","))
+  
+  Mapped.Reads.pct=specify_decimal(align.df$Mapped.reads.pct,3)
+  Unmapped.reads.pct=specify_decimal(align.df$Unmapped.reads.pct,3)
+  
+  align.perc.df[,4]=paste(align.perc.df[,4],paste0('(',Mapped.Reads.pct,'%)'),sep = '\n')
+  align.perc.df[,5]=paste(align.perc.df[,5],paste0('(',Unmapped.reads.pct,'%)'),sep = '\n')
+  
+  colnames(align.perc.df)[1]='Sample\nName'
+  colnames(align.perc.df)[2]='Total\nReads'
+  colnames(align.perc.df)[3]='PF\nReads'
+  colnames(align.perc.df)[4]='Mapped\nReads'
+  colnames(align.perc.df)[5]='Unmapped\nReads'
+  
+  pander(align.perc.df, justify = "center", style = "multiline", keep.line.breaks = TRUE,missing = '.',caption = "\t\t\t\t\t\t\t(In Thousand) Summary table of Alignment\n")
+}
+```
+
+```{r}
+if(align.method=="bwa-aln") {
+  cat("Sample Name : Sample name provided by user","Total Reads : Total number of read filtered out in the remove duplicates process","PF reads : The number of PF reads where PF is defined as passing Illumina's filter","Mapped Reads : Total number of aligned read ","Unmapped Reads : Total number of unmapped read (Unmapped Reads = Total Reads - Mapped Reads )", sep = "\n")
+}
+```
+
+\newpage
+
+## (2)Result plot of Alignment
+
+\       
+```{r echo = FALSE, message=FALSE, warning=FALSE, comment=NA, results='asis', fig.show=TRUE, fig.height=9, fig.width=7}
+if(align.method=="tophat2") {
+  
+  align.perc
+  align.stack.perc=align.perc[,-6]
+  align.stack.perc[,2]=as.numeric(align.stack.perc[,2])-as.numeric(align.stack.perc[,4])
+  align.stack.perc[,3]=as.numeric(align.stack.perc[,3])-as.numeric(align.stack.perc[,5])
+  colnames(align.stack.perc)=c("Sample.Name","Mapped_Reads_R1", "Mapped_Reads_R2", "Multi-mapped_Reads_R1", "Multi-mapped_Reads_R2", "Unmapped_Reads_R1","Unmapped_Reads_R2")
+  stack.df=melt(align.stack.perc, id.vars = "Sample.Name")
+  stack.df$value=as.numeric(specify_decimal(as.numeric(stack.df$value),2))
+  sep.r=strsplit(x = as.character(stack.df$variable),split = "_")
+  
+  for(i in 1:length(stack.df[,1])) stack.df$treat[i]=sep.r[[i]][3]
+  for(i in 1:length(stack.df[,1])) stack.df$state[i]=paste0(sep.r[[i]][-3], collapse = "_")
+  
+  class(stack.df$value)
+  if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+  if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+               
+  align.plot=ggplot(stack.df, aes(x = Sample.Name, y = value, fill = state)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +coord_flip +
+             scale_fill_manual(values=c("goldenrod1", "skyblue","lightpink2"),labels=c("Mapped Reads","Multi-mapped Reads","Unmapped Reads"))+
+             theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+             xlab("Sample Name") + opts + labs(fill = "") + ylab("Proprotion(%)") + facet_wrap(~treat)
+
+  
+  }else if(align.method=="bwa-mem"|align.method=="star") {
+    align.perc=align.df[,c(1,5,7,11,13)]
+    colnames(align.perc)[1]="Sample.Name"
+    stack.df=melt(align.perc, id.vars = "Sample.Name")
+    stack.df[3]=as.numeric(stack.df[,3])*100
+    stack.df$treat=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.")[[1]][3])
+    stack.df$state=sapply(as.character(stack.df$variable), function(a) strsplit(a, split="\\.R")[[1]][1])
+    
+    if(length(unique(stack.df[,1]))>10) coord_flip=coord_flip() else coord_flip=NULL
+    if(length(unique(stack.df[,1]))<10) opts=theme(axis.text.x=element_text(angle=90 , hjust = 1)) else opts=NULL
+               
+    align.plot=ggplot(stack.df, aes(x = Sample.Name, y = value, fill = state)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +coord_flip +
+               scale_fill_manual(values=c("goldenrod1", "lightpink2","skyblue"))+
+               theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+               xlab("Sample Name") + opts + labs(fill = "") + ylab("Proportion(%)")+ facet_wrap(~treat)
+  }else if(align.method=="bwa-aln"){
+    align.perc=align.df[,c(1,5,7)]
+    colnames(align.perc)[1]="Sample.Name"
+    stack.df=melt(align.perc, id.vars = "Sample.Name")
+    stack.df[3]=as.numeric(stack.df[,3])*100
+    align.plot=ggplot(stack.df, aes(x = Sample.Name, y = value, fill = variable)) + geom_bar(stat = 'identity', position = 'stack', width=0.5) +coord_flip +
+               scale_fill_manual(values=c("goldenrod1", "lightpink2","skyblue"),labels=c("Mapped reads", "Unmapped reads", "Duplicated reads"))+
+               theme(legend.position="top", axis.text.x = element_text(face="bold"), axis.text.y = element_text(face="bold"))+
+               xlab("Sample Name") + opts + labs(fill = "") + ylab("Proportion(%)")
+  }
+
+plot.stack.df=stack.df[rev(rownames(stack.df)),]
+plot.stack.df$Sample.Name=as.factor(plot.stack.df$Sample.Name)
+align.plot + ggtitle("Mapping proportion in each sample") + theme(plot.title = element_text(hjust = 0.5))+scale_x_discrete(limits = rev(levels(plot.stack.df$Sample.Name)))
+```
+
+\newpage

@@ -1,0 +1,6 @@
+#
+chr1	.	miRNA_primary_transcript	7369	7436	.	-	.	ID=MI0022705;Alias=MI0022705;Name=hsa-mir-6859-1
+chr1	.	miRNA	7409	7431	.	-	.	ID=MIMAT0027618;Alias=MIMAT0027618;Name=hsa-miR-6859-5p;Derives_from=MI0022705
+chr1	.	miRNA	7369	7391	.	-	.	ID=MIMAT0027619;Alias=MIMAT0027619;Name=hsa-miR-6859-3p;Derives_from=MI0022705
+chr1	.	miRNA_primary_transcript	20366	20503	.	+	.	ID=MI0006363;Alias=MI0006363;Name=hsa-mir-1302-2
+chr1	.	miRNA	20438	20458	.	+	.	ID=MIMAT0005890;Alias=MIMAT0005890;Name=hsa-miR-1302;Derives_from=MI0006363

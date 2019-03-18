@@ -1,0 +1,192 @@
+---
+title: "SEQprocess Report"
+output: 
+  pdf_document:
+    fig_caption: no
+    toc: yes
+params:
+  alignment.eval: no
+  annovar.eval: no
+  qc.eval: no
+  trimming.eval: no
+  rmdup.eval: no
+  realign.eval: no
+  preprocessing.eval: no
+  eset.eval: no
+  eSet.eval: no
+  vset.eval: no
+  cset.eval: no
+---
+
+# Report Summary
+
+_______________________________________________________________\             
+
+**Project Name** : `r envList["project.name"]`\                 
+**Date** : `r format(Sys.time(), "%d %B, %Y")`\                  
+**User** : `r Sys.info()["user"]`\                              
+**Data Type** : `r envList["type"]`\                             
+**Number of Samples** : `r length(envList[["sample.name"]])`\      
+**Processing Pipeline** : `r analysis.pipeline`\                
+________________________________________________________________\              
+
+```{r setup, include=TRUE, echo=FALSE,message=FALSE}
+library(SEQprocess)
+library(pander)
+library(knitr)
+library(png)
+library(grid)
+library(gridExtra)
+library(ggplot2)
+library(reshape2)
+knitr::opts_chunk$set(echo = FALSE, comment = NA, message = FALSE, warning=FALSE, result='asis')
+knitr::opts_chunk$set(fig.show=T, fig.height = 2, fig.width = 2)
+options("scipen"=100, "digits"=4)
+panderOptions('table.caption.prefix','')
+```
+
+```{r func, echo=FALSE, message=FALSE}
+get.program.path=function(process.names){
+  pipe.program=NULL
+  if(is.element("qc", process.names)) pipe.program=c(pipe.program, QC="FastQC")
+  if(is.element("trim", process.names)) pipe.program=c(pipe.program, Trimming="Trim_galore")
+  if(is.element("cutadapt", process.names)) pipe.program=c(pipe.program, Trimming="CutAdapt")
+  if(is.element("bwa-mem", process.names)) pipe.program=c(pipe.program, Alignment='BWA\nsamtools') 
+  if(is.element("bwa-aln", process.names)) pipe.program=c(pipe.program, Alignment='BWA')
+  if(is.element("tophat2", process.names)) pipe.program=c(pipe.program, Tophat2="Tophat2")
+  if(is.element("star", process.names)) pipe.program=c(pipe.program, Alignment='STAR')
+  if(is.element("bowtie2", process.names)) pipe.program=c(pipe.program, Tophat2="bowtie2")
+  if(is.element("rmdu", process.names)) pipe.program=c(pipe.program, Remove_Duplicates="Picard MarkDuplicates")
+  if(is.element("rmdu_b", process.names)) pipe.program=c(pipe.program, Remove_Duplicates="Picard MarkDuplicates")
+  if(is.element("realign", process.names)) pipe.program=c(pipe.program, Realign="GATK")
+  if(is.element("gatk", process.names)) pipe.program=c(pipe.program, Variant_Call="GATK")
+  if(is.element("varscan2", process.names)) pipe.program=c(pipe.program, Variant_Call='samtools\nVarScan2')
+  if(is.element("mutect2", process.names)) pipe.program=c(pipe.program, Variant_Call="GATK")
+  if(is.element("muse", process.names)) pipe.program=c(pipe.program, Variant_Call="MuSE")
+  if(is.element("somaticsniper", process.names)) pipe.program=c(pipe.program, Variant_Call="SomaticSniper")
+  if(is.element("annot", process.names)) pipe.program=c(pipe.program, Annotation="ANNOVAR")
+  if(is.element("vep", process.names)) pipe.program=c(pipe.program, VEP="VEP")
+  if(is.element("cufflinks", process.names)) pipe.program=c(pipe.program, RNA_Quantification="Cufflinks")
+  if(is.element("htseq", process.names)) pipe.program=c(pipe.program, RNA_Quantification='samtools\nHT-Seq')
+  pipe.program
+}
+
+get.param=function(process.names,input.params){
+  tool.param=NULL
+  if(is.element("qc", process.names)) tool.param=c(tool.param, QC=".")
+  if(is.element("trim", process.names)) tool.param=c(tool.param,Trimming=paste(paste0('trim.quality>',trim.quality),paste0('trim.clip_R1=',trim.clip_R1),paste0('trim.clip_R2=',trim.clip_R2),sep='\n'))
+  if(is.element("cutadapt", process.names))tool.param=c(tool.param,Trimming=paste(paste0('Minimum Read length=',m),paste0('Adapt Sequence=',adapt.seq),sep='\n'))
+  if(is.element("tophat2", process.names)) tool.param=c(tool.param, Alignment=paste('Reference gtf file=',basename(ref.gtf),sep='\n'))
+  if(is.element("bwa-mem", process.names)) tool.param=c(tool.param, Alignment=paste('Alogrithgm : MEM',paste('Reference Fasta file=',basename(ref.fa),sep='\n'),sep='\n'))
+  if(is.element("bwa-aln", process.names)) tool.param=c(tool.param, Alignment=paste('Alogrithgm : aln , SAMSE',paste0('Reference Fasta file=',basename(ref.fa)),sep='\n'))
+  if(is.element("star", process.names)) tool.param=c(tool.param, Alignment=paste(paste('Reference Fasta file=',basename(ref.fa),spe='\n'),paste0('--outSAMtype BAM SortedByCoordinate'),sep='\n'))
+  if(is.element("bowtie2",process.names)) tool.param=c(tool.param, Alignment='-S')
+  if(is.element("rmdu", process.names)) tool.param=c(tool.param, Remove_Duplicates=".")
+  if(is.element("rmdu_b", process.names))tool.param=c(tool.param, Remove_Duplicates='BARCODE_TAG=RX')
+  if(is.element("realign", process.names)) tool.param=c(tool.param, Realign=paste(paste('Reference Fasta file=',basename(ref.fa),sep='\n'),paste('Reference Indel vcf file=',basename(ref.gold_indels),sep='\n'),sep='\n'))
+  if(is.element("gatk",process.names)) tool.param=c(tool.param,Variant_Call=paste('-T haplotypecaller',paste('Reference Fasta file=',basename(ref.fa),sep='\n'),sep='\n'))       
+  if(is.element("varscan2",process.names)) tool.param=c(tool.param,Variant_Call=paste(paste0('mpileup Mapping Quality=',mapQ),paste('Reference Fasta file=',basename(ref.fa),sep='\n'),sep='\n'))
+  if(is.element("mutect2",process.names)) tool.param=c(tool.param,Variant_Call=paste('-T MuTect2',paste0('--cosmic=',basename(cosmic.vcf)),paste0('--dbSNP=',basename(ref.dbSNP)),sep='\n'))
+  if(is.element("muse",process.names)) tool.param=c(tool.param,Variant_Call=paste('call',paste('Reference Fasta file=',basename(ref.fa),sep='\n'),'sump',paste('Reference SNP vcf file=',basename(ref.dbSNP),sep='\n'),paste('Reference Indel vcf file=',basename(ref.gold_indels),sep='\n'),paste0('Data type=',envList$MuSE.data.type),sep='\n'))
+  if(is.element("somaticsniper",process.names)) tool.param=c(tool.param,Variant_Call=paste('Reference Fasta file=',basename(ref.fa),sep='\n')) 
+  if(is.element("annot", process.names)) tool.param=c(tool.param, Annotation=paste('--buildver=',input.params$parameter[input.params$name=="ref"]))
+  if(is.element("vep", process.names)) tool.param=c(tool.param, VEP='--offline')
+  if(is.element("cufflinks", process.names)) tool.param=c(tool.param, RNA_Quantification=".")
+  if(is.element("htseq", process.names)) tool.param=c(tool.param, RNA_Quantification=paste('view -F 4',paste('Reference gtf file=',basename(ref.gtf),sep='\n'),sep='\n'))
+
+  tool.param
+}
+
+
+specify_decimal=function(x, k) trimws(format(round(x, k), nsmall=k))
+```
+
+# Analysis Summary
+
+```{r config.info, echo=FALSE}
+process.names=report.summary$process.names
+input.params=report.summary$input.params
+Pipeline.program=get.program.path(process.names)
+Tool.parameter=get.param(process.names,input.params)
+prog.df=unique(data.frame(Pipeline=names(Pipeline.program), Tool=Pipeline.program, Parameters=Tool.parameter,row.names = NULL))
+
+input.fns=list(fq1=get.fns(file.path(input.params$parameter[input.params$name=="fastq.dir"]), fq1.idx),fq2=get.fns(file.path(input.params$parameter[input.params$name=="fastq.dir"]), fq2.idx))
+input.idx=".1.fastq$|_R1.fastq$|.1_val_1.fq$|_1.fq$"
+if(length(input.fns)>1) Sample_ID=sub(input.idx,"",basename(input.fns$fq1)[grep(input.idx,basename(input.fns$fq1))]) else Sample_ID=sub(bam.idx,"",input.fns)
+ if(length(Sample_ID)<30) fig.height=7 else if(length(Sample_ID)<60) fig.height=13 else fig.height= 17
+input.df=data.frame(Number=c(1:length(Sample_ID)),Sample_ID=Sample_ID)
+```
+##1. Sample Information
+
+\       
+\       
+
+```{r sample.df, echo=FALSE}
+pander(input.df, justify = "center", style = "multiline", split.table = Inf, caption = "\t\t\t\t\t\t\t\t  Number and Name of Input data")
+```
+
+\      
+
+## 2. Processing Pipeline
+
+Pipeline `r analysis.pipeline` was performed with the following parameters. 
+
+\       
+
+```{r prog.df, echo=FALSE}
+pander(prog.df, justify = "center", style = "multiline", keep.line.breaks = TRUE,caption = "\t\t\t\t\t  Information of Tool and Parameters used in analysis",split.cells = c("25%","25%","50%"))
+```
+
+\     
+
+The processing results of each step from different softwares are saved in the following directories.
+
+```{r, echo=FALSE}
+if(input.params$parameter[input.params$name=="align.method"]=="bwa") align.method=process.names[grep("bwa",process.names)] else align.method=input.params$parameter[input.params$name=="align.method"]
+align.method=as.character(align.method)
+rmdu.method=process.names[grep("rmdu",process.names)]
+annotation.method=input.params$parameter[input.params$name=="annotation.method"]
+annotation.method=as.character(annotation.method)
+output.dir=as.character(input.params$parameter[input.params$name=="output.dir"])
+type=as.character(input.params$parameter[input.params$name=="type"])
+
+if(annotation.method=="annovar") annot.out="_multianno.csv" else if(annotation.method=="vep") annot.out="txt" else annot.out=c("txt , _multianno.csv") 
+
+output.df=data.frame(File.Directory =c("00_qc","01_trim","02_align","03_rmdup","04_realign","05_vcf","06_annot","07_RNAquant"), Data.Type=c("html","fq","bam","rmdu.bam","realign.bam","vcf",annot.out,"txt"))
+colnames(output.df)=c("File Directory","Data Type")
+if(input.params$parameter[input.params$name=="rseq.abundance.method"]=="none") output.df=output.df[1:7,]
+```
+
+```{r, echo=FALSE}
+pander(output.df, justify = 'left', style = "multiline", split.table = Inf,  caption = "\t\t\t\t\t\t\tOutput Directory structure and data type")
+```
+
+\newpage
+
+## 3. Result summary
+
+```{r child='report_qc.Rmd', eval=params$qc.eval}
+```
+
+\newpage
+
+```{r child='report_trim.align.rmdu.Rmd', eval=params$preprocessing.eval}
+```
+
+```{r child='report_trim.Rmd', eval=params$trimming.eval}
+```
+
+```{r child='report_align.Rmd', eval=params$alignment.eval}
+```
+
+```{r child='report_rmdu.Rmd', eval=params$rmdup.eval}
+```
+
+```{r child='report_realign.Rmd', eval=params$realign.eval}
+```
+
+```{r child='report_annovar.Rmd', eval=params$annovar.eval}
+```
+
+```{r child='report_Robject.Rmd',eval=params$eset.eval}
+```
