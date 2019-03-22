@@ -1,9 +1,9 @@
 Package: SEQprocess
 Type: Package
-Title: R-based pipelines for NGS data processing
+Title: SEQprocess : a modularized and customizable pipeline framework for NGS processing in R package.
 Version: 0.99.0
 Date: 2018-1-3
-Author: Hyun Goo Woo
+Author: Taewoon Joo
 Maintainer: Hyun Goo Woo  <HyunGooWoo@gmail.com>
 Description: R-based pipelines for NGS data processing
 License: GPL2
