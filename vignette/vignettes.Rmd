@@ -1,14 +1,44 @@
 ---
-title: 'SEQprocess: An automated and extendable pipeline framework for NGS data processing
-  in R package'
+title: 'SEQprocess: a modularized and customizable pipeline framework for NGS processing in R package'
+author: 
+- name: 'Taewoon Joo'
+ affiliation: 
+ -'Department of Physiology, Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+ - name: 'Ji-Hye Choi'
+  affiliation: 
+  - 'Department of Physiology, Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+  -'Department of Biomedical Science, Graduate School, Ajou University, Suwon, Republic of Korea' 
+- name: 'Ji-Hye Lee'
+affiliation: 
+ - 'Department of Physiology, Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+ - 'Department of Biomedical Science, Graduate School, Ajou University, Suwon, Republic of Korea' 
+
+- name: 'So Eun Park'
+affiliation: 
+ - 'Department of Physiology, Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+ - 'Department of Biomedical Science, Graduate School, Ajou University, Suwon, Republic of Korea' 
+
+- name: 'Youngsic Jeon'
+affiliation: 
+ - 'Department of Pathology, Yonsei University College of Medicine, Seoul, Republic of Korea'
+
+- name: 'Sae Hoon Jung'
+ - 'Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+
+- name: 'Hyun Goo Woo'
+ affiliation: 
+ - 'Department of Physiology, Ajou University School of Medicine, 164 Worldcup-ro, Yeongtong-gu, Suwon, 16499, Republic of Korea'
+ - 'Department of Biomedical Science, Graduate School, Ajou University, Suwon, Republic of Korea' 
+ email: 'hg@ajou.ac.kr'
+
 output:
-  pdf_document:
+  html_document:
     toc: yes
     toc_depth: '3'
   word_document:
     toc: yes
     toc_depth: '3'
-  html_document:
+  pdf_document:
     toc: yes
     toc_depth: '3'
 urlcolor: blue
