@@ -248,6 +248,7 @@ SEQprocess=function(
   
   # Alignment - 2. STAR
   if(align.method=="star"){
+    if(trim.method!="none") fastq.dir=trim.dir
     fns.bam=run.star(star.idx.dir, sample.name, fq1, fq2, fastq.dir, output.dir=align.dir, ref.fa, ref.gtf, sjdbOverhang, star.thread.number, outFilterMultimapScoreRange, outFilterMultimapNmax, outFilterMismatchNmax, alignIntronMax,  alignMatesGapMax, sjdbScore, alignSJDBoverhangMin, outFilterMatchNminOverLread, outFilterScoreMinOverLread, mc.cores, run.cmd, align.dir, RGSM)
     fns.bam
   }
@@ -389,10 +390,14 @@ run.star=function(star.idx.dir, sample.name, fq1, fq2, fastq.dir, output.dir, re
   fq2.fns=get.fns(fastq.dir, fq2.idx)
   sample.name=sub(fq1.idx, "", basename(fq1.fns))
   
-  build.star.idx(star.idx.dir=star.idx.dir, sample.name=sample.name, align.dir=align.dir, ref.fa=ref.fa, ref.gtf=ref.gtf, sjdbOverhang=sjdbOverhang, star.thread.number=star.thread.number, fasta.idx=TRUE, SJ.idx=FALSE, run.cmd=run.cmd)
-  STAR(star.idx.dir=star.idx.dir, output.dir=output.dir, sample.name=sample.name, fq1=fq1.fns, fq2=fq2.fns, star.thread.number=star.thread.number, outFilterMultimapScoreRange=outFilterMultimapScoreRange, outFilterMultimapNmax=outFilterMultimapNmax, outFilterMismatchNmax=outFilterMismatchNmax, alignIntronMax=alignIntronMax,  alignMatesGapMax=alignMatesGapMax, sjdbScore=sjdbScore, alignSJDBoverhangMin=alignSJDBoverhangMin, outFilterMatchNminOverLread=outFilterMatchNminOverLread, outFilterScoreMinOverLread=outFilterScoreMinOverLread, sjdbOverhang=sjdbOverhang, SJ.detect=TRUE, SJ.align=FALSE, run.cmd=run.cmd, mc.cores=mc.cores)
-  build.star.idx(star.idx.dir=star.idx.dir, sample.name=sample.name, align.dir=align.dir, ref.fa=ref.fa, ref.gtf=ref.gtf, sjdbOverhang=sjdbOverhang, star.thread.number=star.thread.number, fasta.idx=FALSE, SJ.idx=TRUE, run.cmd=run.cmd)
+  #build.star.idx(star.idx.dir=star.idx.dir, sample.name=sample.name, align.dir=align.dir, ref.fa=ref.fa, ref.gtf=ref.gtf, sjdbOverhang=sjdbOverhang, star.thread.number=star.thread.number, fasta.idx=TRUE, SJ.idx=FALSE, run.cmd=run.cmd)
+  
+  #STAR(star.idx.dir=star.idx.dir, output.dir=output.dir, sample.name=sample.name, fq1=fq1.fns, fq2=fq2.fns, star.thread.number=star.thread.number, outFilterMultimapScoreRange=outFilterMultimapScoreRange, outFilterMultimapNmax=outFilterMultimapNmax, outFilterMismatchNmax=outFilterMismatchNmax, alignIntronMax=alignIntronMax,  alignMatesGapMax=alignMatesGapMax, sjdbScore=sjdbScore, alignSJDBoverhangMin=alignSJDBoverhangMin, outFilterMatchNminOverLread=outFilterMatchNminOverLread, outFilterScoreMinOverLread=outFilterScoreMinOverLread, sjdbOverhang=sjdbOverhang, SJ.detect=TRUE, SJ.align=FALSE, run.cmd=run.cmd, mc.cores=mc.cores)
+  
+  #build.star.idx(star.idx.dir=star.idx.dir, sample.name=sample.name, align.dir=align.dir, ref.fa=ref.fa, ref.gtf=ref.gtf, sjdbOverhang=sjdbOverhang, star.thread.number=star.thread.number, fasta.idx=FALSE, SJ.idx=TRUE, run.cmd=run.cmd)
+  
   fns.bam=STAR(star.idx.dir=star.idx.dir, output.dir=output.dir, sample.name=sample.name, fq1=fq1.fns, fq2=fq2.fns, star.thread.number=star.thread.number, outFilterMultimapScoreRange=outFilterMultimapScoreRange, outFilterMultimapNmax=outFilterMultimapNmax, outFilterMismatchNmax=outFilterMismatchNmax, alignIntronMax=alignIntronMax, alignMatesGapMax=alignMatesGapMax, sjdbScore=sjdbScore, alignSJDBoverhangMin=alignSJDBoverhangMin, outFilterMatchNminOverLread=outFilterMatchNminOverLread, outFilterScoreMinOverLread=outFilterScoreMinOverLread, sjdbOverhang=sjdbOverhang, SJ.detect=FALSE, SJ.align=TRUE, run.cmd=run.cmd, mc.cores=mc.cores)
+  
   fns.bam
 }
 
@@ -436,7 +441,7 @@ run.gatk=function(fns.bam, output.dir, sample.name, ref.fa=ref.fa, ref.gold_inde
     fns.bam=get.fns(realign.dir, bam.idx)
     sample.name=sub(bam.idx, "", basename(fns.bam))
     fns.grp=gatk.baserecalibrator(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, ref.dbSNP=ref.dbSNP, ref.gold_indels=ref.gold_indels, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
-    fns.bam=gatk.printreads(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
+    fns.bam=gatk.applyBQSR(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
     
     fns.vcf=gatk.haplotypecaller(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, run.cmd=run.cmd, mc.cores=mc.cores)
     out.fns=gatk.variantfilter(fns.vcf=fns.vcf, output.dir=output.dir, ref.fa=ref.fa, FS=FS, QD=QD, QUAL=QUAL, DP=DP, gatk.window=gatk.window, cluster= cluster, run.cmd=run.cmd, mc.cores=mc.cores)
@@ -449,7 +454,7 @@ run.varscan=function(fns.bam, ref.dbSNP, ref.gold_indels, unsafe, ref.fa, normal
     fns.bam=get.fns(realign.dir, bam.idx)  
     sample.name=sub(bam.idx, "", basename(fns.bam))
     fns.grp=gatk.baserecalibrator(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, ref.dbSNP=ref.dbSNP, ref.gold_indels=ref.gold_indels, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
-    fns.bam=gatk.printreads(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
+    fns.bam=gatk.applyBQSR(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
     
     normal.bam=fns.bam[grep(n.sample, fns.bam)]
     tumor.bam=fns.bam[grep(t.sample, fns.bam)]
@@ -467,7 +472,7 @@ run.muse=function(fns.bam, output.dir, tumor.bam, normal.bam, sample.name, ref.f
   fns.bam=get.fns(realign.dir, bam.idx)  
   sample.name=sub(bam.idx, "", basename(fns.bam))
   fns.grp=gatk.baserecalibrator(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, ref.dbSNP=ref.dbSNP, ref.gold_indels=ref.gold_indels, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
-  fns.bam=gatk.printreads(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
+  fns.bam=gatk.applyBQSR(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
   
   normal.bam=fns.bam[grep(n.sample, fns.bam)]
   tumor.bam=fns.bam[grep(t.sample, fns.bam)]
@@ -481,7 +486,7 @@ run.mutect2=function(tumor.bam, normal.bam, output.dir, sample.name, ref.fa, ref
   fns.bam=get.fns(realign.dir, bam.idx)  
   sample.name=sub(bam.idx, "", basename(fns.bam))
   fns.grp=gatk.baserecalibrator(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, ref.dbSNP=ref.dbSNP, ref.gold_indels=ref.gold_indels, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
-  fns.bam=gatk.printreads(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
+  fns.bam=gatk.applyBQSR(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
   
   normal.bam=fns.bam[grep(n.sample, fns.bam)]
   tumor.bam=fns.bam[grep(t.sample, fns.bam)]
@@ -499,7 +504,7 @@ run.somaticsniper=function(fns.bam, output.dir, sample.name, ref.fa, ref.dbSNP, 
   fns.bam=get.fns(realign.dir, bam.idx)  
   sample.name=sub(bam.idx, "", basename(fns.bam))
   fns.grp=gatk.baserecalibrator(fns.bam=fns.bam, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, ref.dbSNP=ref.dbSNP, ref.gold_indels=ref.gold_indels, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
-  fns.bam=gatk.printreads(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
+  fns.bam=gatk.applyBQSR(fns.bam=fns.bam, fns.grp=fns.grp, output.dir=output.dir, sample.name=sample.name, ref.fa=ref.fa, unsafe=unsafe, gatk.thread.number=gatk.thread.number, run.cmd=run.cmd, mc.cores=mc.cores)
   
   normal.bam=fns.bam[grep(n.sample, fns.bam)]
   tumor.bam=fns.bam[grep(t.sample, fns.bam)]
@@ -532,6 +537,7 @@ run.annotation=function(annotation.method, fns.vcf, output.dir, sample.name, ann
 run.rseq.abundance=function(rseq.abundance.method, fns.bam, output.dir, sample.name, cufflinks.thread.number, cufflinks.gtf, ref.gtf, RNAtype, Mode, stranded, idattr, htseq.r, htseq.a, mir.gff, run.cmd, mc.cores, align.dir){
   fns.bam=get.fns(align.dir, idx=".Aligned.sortedByCoord.out.bam$|.sam$|accepted_hits.bam$")
   if(rseq.abundance.method=="cufflinks"){
+    if(!sum(basename(dirname(fns.bam))==sample.name)!=0) sample.name=basename(dirname(fns.bam))
     out.fns=cufflinks(fns.bam, output.dir=output.dir, sample.name=sample.name, cufflinks.thread.number=cufflinks.thread.number, cufflinks.gtf=cufflinks.gtf, ref.gtf=ref.gtf, run.cmd=run.cmd, mc.cores=mc.cores)
   }
   

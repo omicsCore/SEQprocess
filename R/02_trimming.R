@@ -25,7 +25,7 @@ trim.gal=function(fq1, fq2, output.dir, trim.quality=30, trim.clip_R1=13, trim.c
   lapply(1:length(out.dirs), function(a) dir.create(out.dirs[a], recursive = TRUE, showWarnings=FALSE))
   
   # command
-  cmd=paste(trim_galore.path, "--quality", trim.quality, "--paired", "--clip_R1", trim.clip_R1, "--clip_R2", trim.clip_R2, "-o", out.dirs, fq1, fq2)
+  cmd=paste(trim_galore.path, "--quality", trim.quality, "--paired", "--clip_R1", trim.clip_R1, "--clip_R2", trim.clip_R2, "-o", out.dirs, "--dont_gzip", fq1, fq2)
   
   # run
   message("[[",Sys.time(),"]] Run trim_galore --------")

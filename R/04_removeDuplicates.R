@@ -38,7 +38,7 @@ picard.rmdu=function(fns.bam,
   out.metrics.fns=sub(".bam",".metrics", out.fns)
   
   cmd.add=ifelse(BARCODE_TAG, " BARCODE_TAG=RX", "")
-  cmd=paste0("java -jar ", picard.path, " MarkDuplicates", " INPUT=", fns.bam, " OUTPUT=", out.fns, " METRICS_FILE=", out.metrics.fns, 
+  cmd=paste0("java -XX:ParallelGCThreads=4 -XX:ConcGCThreads=1 -Xmx8G -jar ", picard.path, " MarkDuplicates", " INPUT=", fns.bam, " OUTPUT=", out.fns, " METRICS_FILE=", out.metrics.fns, 
              " CREATE_INDEX=", CREATE_INDEX, " VALIDATION_STRINGENCY=", VALIDATION_STRINGENCY, 
              " REMOVE_DUPLICATES=", REMOVE_DUPLICATES, " TMP_DIR=", tmp.dir, cmd.add)
   

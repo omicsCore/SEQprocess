@@ -34,8 +34,7 @@ gatk.haplotypecaller=function(fns.bam,
   message("[[",Sys.time(),"]] Run haplotypecaller -------")
   
   cmd.add=ifelse(unsafe, "-U ALLOW_N_CIGAR_READS", "")
-  cmd=paste("java -jar", GATK.path, "-T HaplotypeCaller", "-R", ref.fa, "-I", fns.bam, "-o", out.fns, "--genotyping_mode", genotyping_mode, 
-            " --output_mode", output_mode, "-stand_call_conf", stand_call_conf_number, cmd.add)
+  cmd=paste(GATK4.path, "--java-options -Xmx64G HaplotypeCaller", "-R", ref.fa, "-I", fns.bam, "-O", out.fns, " --output-mode", output_mode, "-stand-call-conf", stand_call_conf_number, cmd.add)
   
   print_message(cmd)
   
@@ -84,9 +83,9 @@ gatk.variantfilter=function(fns.vcf,
   
   out.fns=sub("vcf$", "f.vcf", fns.vcf)
   
-  fil.opt=paste0("-filterName FS -filter", " \" FS > ", FS,"\"", " -filterName QD -filter", " \"QD < ", QD,"\"", " -filterName LowQual -filter ", "\"QUAL < ", QUAL,"\"", " -filterName LowDepth -filter ", "\"DP < ", DP,"\"")
+  fil.opt=paste0("--filter-name \"FS\" --filter-expression", " \" FS > ", FS,"\"", " --filter-name \"QD\" --filter-expression", " \"QD < ", QD,"\"", " --filter-name \"LowQual\" --filter-expression ", "\"QUAL < ", QUAL,"\"", " --filter-name \"LowDepth\" --filter-expression ", "\"DP < ", DP,"\"")
   message("[[",Sys.time(),"]] Run variant filtration -------")
-  cmd=paste("java -jar", GATK.path, "-T VariantFiltration", "-R", ref.fa, "-V", fns.vcf, "-o", out.fns, "-window", gatk.window, "-cluster", cluster, fil.opt) 
+  cmd=paste(GATK4.path, "--java-options -Xmx64G VariantFiltration", "-R", ref.fa, "-V", fns.vcf, "-O", out.fns, "-window", gatk.window, "-cluster", cluster, fil.opt) 
   
   print_message(cmd)
   

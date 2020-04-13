@@ -109,6 +109,7 @@ REMOVE_DUPLICATES=TRUE
 ##################################
 # GATK
 GATK.path=file.path(program.dir, "gatk/3.7/GenomeAnalysisTK.jar") # variant calling too
+GATK4.path=file.path(program.dir, "gatk/gatk4/gatk")
 
 ##################################
 ###### 6. Variant Calling ########
@@ -226,11 +227,14 @@ transcriptome.idx=file.path(reference.dir, "ngs_ref/ftp.ebi.ac.uk/pub/databases/
 
 # Reference files for variant Calling
 ref.gold_indels=file.path(reference.dir, "ngs_ref/broad_hg38_v0_bundle/Mills_and_1000G_gold_standard.indels.hg38.vcf")
-ref.dbSNP=file.path(reference.dir, "ngs_ref/ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b147_GRCh38p2/VCF/GATK/common_all_20161122.vcf")
+#ref.dbSNP=file.path(reference.dir, "ngs_ref/ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b147_GRCh38p2/VCF/GATK/common_all_20161122.vcf")
+ref.dbSNP=file.path(reference.dir, "ngs_ref/ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/GATK/common_all_20180418_chr.vcf")
+
 fn.hapmap.vcf=file.path(reference.dir, "ngs_ref/broad_hg38_v0_bundle/resources_broad_hg38_v0_hapmap_3.3.hg38.vcf")
 fn.omni.vcf=file.path(reference.dir, "ngs_ref/broad_hg38_v0_bundle/resources_broad_hg38_v0_1000G_omni2.5.hg38.vcf")
 fn.1000g.vcf=file.path(reference.dir, "ngs_ref/broad_hg38_v0_bundle/resources_broad_hg38_v0_1000G_phase1.snps.high_confidence.hg38.vcf")
 #cosmic.vcf=file.path(reference.dir, "COSMIC/CosmicCodingMuts_v76.vcf") 
+
 
 #####################################################
 # Reference files  for RNAquantitiation
